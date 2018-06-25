@@ -402,7 +402,7 @@ MessageHeader::Hello::Serialize (Buffer::Iterator start) const
       const LinkMessage &lm = *iter;
 
       i.WriteU8 (lm.linkCode);
-      i.WriteU8 (0); // Reserved
+      i.WriteU8 (lm.stable); // Reserved
 
       // The size of the link message, counted in bytes and measured
       // from the beginning of the "Link Code" field and until the
@@ -444,7 +444,7 @@ MessageHeader::Hello::Deserialize (Buffer::Iterator start, uint32_t messageSize)
       LinkMessage lm;
       NS_ASSERT (helloSizeLeft >= 4);
       lm.linkCode = i.ReadU8 ();
-      i.ReadU8 (); // Reserved
+      lm.stable=i.ReadU8 (); // Reserved
       uint16_t lmSize = i.ReadNtohU16 ();
       NS_ASSERT ((lmSize - 4) % IPV4_ADDRESS_SIZE == 0);
       for (int n = (lmSize - 4) / IPV4_ADDRESS_SIZE; n; --n)
