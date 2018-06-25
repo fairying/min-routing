@@ -625,6 +625,30 @@ RoutingProtocol::Degree (NeighborTuple const &tuple)
   return degree;
 }
 
+double
+RoutingProtocol::WillReach (NeighborTuple const &tuple)
+{
+  double willReach = 0;
+  for (TwoHopNeighborSet::const_iterator it = m_state.GetTwoHopNeighbors ().begin ();
+       it != m_state.GetTwoHopNeighbors ().end (); it++)
+    {
+      TwoHopNeighborTuple const &nb2hop_tuple = *it;
+      if (nb2hop_tuple.neighborMainAddr == tuple.neighborMainAddr)
+        {
+          const NeighborTuple *nb_tuple =
+            m_state.FindNeighborTuple (nb2hop_tuple.neighborMainAddr);
+          if (nb_tuple == NULL)
+            {
+              willReach+=it.willingness*tuple.willingness;
+            }
+        }
+    }
+  return willReach;
+}
+
+
+
+
 namespace {
 ///
 /// \brief Remove all covered 2-hop neighbors from N2 set.
@@ -907,7 +931,8 @@ RoutingProtocol::MprComputation ()
                   max_r = r;
                 }
 
-              else if (nb_tuple->willingness == max->willingness)
+              #else if (nb_tuple->willingness == max->willingness)
+			   else if (WillReach (*nb_tuple) > WillReach (*max))
                 {
                   if (r > max_r)
                     {
