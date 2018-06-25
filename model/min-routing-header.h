@@ -385,6 +385,7 @@ public:
     struct LinkMessage
     {
       uint8_t linkCode;       //!< Link code
+	  uint8_t stable;
       std::vector<Ipv4Address> neighborInterfaceAddresses;  //!< Neighbor interface address container.
     };
 
