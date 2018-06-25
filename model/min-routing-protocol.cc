@@ -639,7 +639,7 @@ RoutingProtocol::WillReach (NeighborTuple const &tuple)
             m_state.FindNeighborTuple (nb2hop_tuple.neighborMainAddr);
           if (nb_tuple == NULL)
             {
-              willReach+=it.willingness*tuple.willingness-abs(it.willingness-tuple.willingness);
+              willReach+=(*it.willingness)*(*tuple).willingness;
             }
         }
     }
@@ -925,14 +925,15 @@ RoutingProtocol::MprComputation ()
             {
 
               const NeighborTuple *nb_tuple = *it2;
-              if (max == NULL || nb_tuple->willingness > max->willingness)
+              if (max == NULL || WillReach (*nb_tuple) > WillReach (*max)) 
+				  //nb_tuple->willingness > max->willingness)
                 {
                   max = nb_tuple;
                   max_r = r;
                 }
 
-              #else if (nb_tuple->willingness == max->willingness)
-			   else if (WillReach (*nb_tuple) > WillReach (*max))
+              //else if (nb_tuple->willingness == max->willingness)
+			   else if (WillReach (*nb_tuple) == WillReach (*max))
                 {
                   if (r > max_r)
                     {
@@ -1812,6 +1813,7 @@ RoutingProtocol::SendHello ()
                nb_tuple != m_state.GetNeighbors ().end ();
                nb_tuple++)
             {
+				uint8_t link_stable=0;
               if (nb_tuple->neighborMainAddr == GetMainAddress (link_tuple->neighborIfaceAddr))
                 {
                   if (nb_tuple->status == NeighborTuple::STATUS_SYM)
@@ -1832,6 +1834,8 @@ RoutingProtocol::SendHello ()
                     }
                   ok = true;
                   break;
+				  link_stable=nb_tuple.willingness*this.willingness;
+				  
                 }
             }
           if (!ok)
@@ -1843,6 +1847,7 @@ RoutingProtocol::SendHello ()
 
       min_routing::MessageHeader::Hello::LinkMessage linkMessage;
       linkMessage.linkCode = (link_type & 0x03) | ((nb_type << 2) & 0x0f);
+	  linkMessage.stable = link_stable;
       linkMessage.neighborInterfaceAddresses.push_back
         (link_tuple->neighborIfaceAddr);
 
@@ -2085,6 +2090,7 @@ RoutingProtocol::LinkSensing (const min_routing::MessageHeader &msg,
     {
       int lt = linkMessage->linkCode & 0x03; // Link Type
       int nt = (linkMessage->linkCode >> 2) & 0x03; // Neighbor Type
+	  int stable=linkMessage->stable;
 
 #ifdef NS3_LOG_ENABLE
       const char *linkTypeName;
@@ -2287,6 +2293,8 @@ RoutingProtocol::PopulateTwoHopNeighborSet (const min_routing::MessageHeader &ms
            linkMessage != hello.linkMessages.end (); linkMessage++)
         {
           int neighborType = (linkMessage->linkCode >> 2) & 0x3;
+		  int linkStable=linkMessage->stable;
+		  
 #ifdef NS3_LOG_ENABLE
           const char *neighborTypeNames[3] = { "NOT_NEIGH", "SYM_NEIGH", "MPR_NEIGH" };
           const char *neighborTypeName = ((neighborType < 3) ?
@@ -2327,6 +2335,7 @@ RoutingProtocol::PopulateTwoHopNeighborSet (const min_routing::MessageHeader &ms
                       new_nb2hop_tuple.neighborMainAddr = msg.GetOriginatorAddress ();
                       new_nb2hop_tuple.twoHopNeighborAddr = nb2hop_addr;
                       new_nb2hop_tuple.expirationTime = now + msg.GetVTime ();
+					  new_nb2hop_tuple.willingness=linkStable;
                       AddTwoHopNeighborTuple (new_nb2hop_tuple);
                       // Schedules nb2hop tuple deletion
                       m_events.Track (Simulator::Schedule (DELAY (new_nb2hop_tuple.expirationTime),
