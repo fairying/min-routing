@@ -639,7 +639,7 @@ RoutingProtocol::WillReach (NeighborTuple const &tuple)
             m_state.FindNeighborTuple (nb2hop_tuple.neighborMainAddr);
           if (nb_tuple == NULL)
             {
-              willReach+=it.willingness*tuple.willingness;
+              willReach+=it.willingness*tuple.willingness-abs(it.willingness-tuple.willingness);
             }
         }
     }
